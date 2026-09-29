@@ -2474,9 +2474,10 @@
         if (present > registered) { alert('Candidates Examined cannot exceed Candidates Registered!'); return; }
         if (!extName && !intName) { alert('At least one examiner (External or Internal) is required!'); return; }
 
-        // ── Duplicate claim number check ──
+        // ── Duplicate claim number check (skip if editing existing claim) ──
         const existing = window.assignmentsDB || [];
-        if (existing.some(a => String(a.claim_no) === String(claimNo) && !document.getElementById('assign-submit-btn').dataset.editing)) {
+        const isEditing = document.getElementById('assign-claim-no').dataset.editing === 'true';
+        if (!isEditing && existing.some(a => String(a.claim_no) === String(claimNo))) {
             alert(`Claim No. ${claimNo} already exists! Each claim number must be unique.`);
             return;
         }
@@ -2524,6 +2525,9 @@
                 document.getElementById('assign-int').value = '';
                 document.getElementById('assign-lab').value = '';
                 document.getElementById('assign-course').value = '';
+                
+                // Clear editing flag
+                document.getElementById('assign-claim-no').dataset.editing = '';
                 
                 // Refresh claims data and regenerate claim number
                 loadClaimsData();
