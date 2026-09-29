@@ -1209,34 +1209,7 @@
                 </div>
             </div>
 
-            <div class="panel" style="padding:20px;margin-bottom:20px;">
-                <div class="panel-header" style="margin-bottom:20px;">
-                    <span class="panel-title"><i class="fa-solid fa-filter"></i>Filter Claim Data</span>
-                </div>
-                <div style="display:grid;grid-template-columns:1.2fr 1fr 1fr auto;gap:15px;align-items:end;">
-                    <div class="fl-wrap">
-                        <input class="fl-input" type="date" id="claim-filter-date" placeholder=" " disabled>
-                        <label class="fl-label fl-up">Exam Date</label>
-                    </div>
-                    <div class="form-group" style="margin:0;">
-                        <select class="fl-input" id="claim-filter-year" style="padding-top:12px;">
-                            <option value="">All Years</option>
-                            <option value="FE">FE</option><option value="SE">SE</option>
-                            <option value="TE">TE</option><option value="BE">BE</option>
-                        </select>
-                    </div>
-                    <div class="form-group" style="margin:0;">
-                        <select class="fl-input" id="claim-filter-sem" style="padding-top:12px;">
-                            <option value="">All Semesters</option>
-                            <option value="I">I</option><option value="II">II</option>
-                            <option value="III">III</option><option value="IV">IV</option>
-                            <option value="V">V</option><option value="VI">VI</option>
-                            <option value="VII">VII</option><option value="VIII">VIII</option>
-                        </select>
-                    </div>
-                    <button type="button" class="btn btn-primary" onclick="clearClaimFilters()" style="height:42px;white-space:nowrap;"><i class="fa-solid fa-rotate-left" style="margin-right:5px;"></i>Clear</button>
-                </div>
-            </div>
+
 
             <!-- 2 Column Layout for Exports -->
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
@@ -3033,7 +3006,7 @@
                                 <td>${claim.int_name || '-'}</td>
                                 <td>${intStaff.college || '-'}</td>
                                 <td>${claim.school || '-'} - ${claim.course || '-'}</td>
-                                <td>${claim.subject || '-'}</td>
+                                <td>${(claim.course || '').split(' - ')[0]} - ${claim.subject || '-'}</td>
                                 <td>${claim.sub_type || '-'}</td>
                                 <td>${claim.exam_date ? claim.exam_date.split('T')[0] : '-'}</td>
                                 <td>${claim.time_slot || '-'}</td>
@@ -3111,7 +3084,7 @@
                                 <td>${claim.ext_name || '-'}</td>
                                 <td>${extStaff.college || '-'}</td>
                                 <td>${claim.school || '-'} - ${claim.course || '-'}</td>
-                                <td>${claim.subject || '-'}</td>
+                                <td>${(claim.course || '').split(' - ')[0]} - ${claim.subject || '-'}</td>
                                 <td>${claim.sub_type || '-'}</td>
                                 <td>${claim.exam_date ? claim.exam_date.split('T')[0] : '-'}</td>
                                 <td>${claim.time_slot || '-'}</td>
@@ -3142,7 +3115,7 @@
                                 <td>${claim.lab_name || '-'}</td>
                                 <td>${labStaff.college || '-'}</td>
                                 <td>${claim.school || '-'} - ${claim.course || '-'}</td>
-                                <td>${claim.subject || '-'}</td>
+                                <td>${(claim.course || '').split(' - ')[0]} - ${claim.subject || '-'}</td>
                                 <td>${claim.sub_type || '-'}</td>
                                 <td>${claim.exam_date ? claim.exam_date.split('T')[0] : '-'}</td>
                                 <td>${claim.time_slot || '-'}</td>
@@ -3205,7 +3178,7 @@
                     <tr style="border-bottom:1px solid var(--border);">
                         <td style="padding:12px; font-weight:500;">${assign.claim_no || '-'}</td>
                         <td style="padding:12px;">${assign.course || '-'}</td>
-                        <td style="padding:12px;">${assign.subject || '-'}</td>
+                        <td style="padding:12px;">${(assign.course || '').split(' - ')[0]} - ${assign.subject || '-'}</td>
                         <td style="padding:12px;">${assign.exam_date ? assign.exam_date.split('T')[0] : '-'}</td>
                         <td style="padding:12px;">${assign.ext_name || '-'}</td>
                         <td style="padding:12px;">${assign.int_name || '-'}</td>
