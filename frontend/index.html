@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sundip Logies - Enterprise Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        slate: {
+                            850: '#151e2e',
+                            900: '#0f172a',
+                        },
+                        electric: {
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                        }
+                    },
+                    backgroundImage: {
+                        'hero-pattern': "url('https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=2070&auto=format&fit=crop')"
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Floating label styles */
+        .floating-input:focus-within label,
+        .floating-input input:not(:placeholder-shown)+label {
+            transform: translateY(-120%) scale(0.85);
+            color: #0ea5e9;
+        }
+
+        .bg-pattern {
+            background-color: #0f172a;
+            background-image: radial-gradient(circle at 15% 50%, rgba(14, 165, 233, 0.15), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(14, 165, 233, 0.15), transparent 25%);
+        }
+
+        /* Smooth fade transition */
+        .fade-enter {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-pattern min-h-screen font-sans text-slate-200 relative overflow-hidden">
+
+    <!-- NAVBAR -->
+    <nav class="absolute top-0 left-0 w-full z-50 px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <!-- Logo Container -->
+            <div class="bg-white p-1.5 rounded-lg shadow-lg">
+                <!-- Using a generic Sandip logo URL. Replace src with your local file if needed -->
+                <img src="https://imgs.search.brave.com/OmSOIh5n_9zwVbhRoOKDF0vtSZQ_17vh13YovXFmiE8/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9jZG4u/dW5pdmVyc2l0eWth/cnQuY29tLy9Db250/ZW50L3VwbG9hZC9h/ZG1pbi9mM2p6d2N4/aS5xcmkucG5n"
+                    alt="Sundip Logo" class="h-10 w-10 sm:h-12 sm:w-12 object-contain">
+            </div>
+            <span class="text-white font-bold text-xl tracking-wide drop-shadow-md hidden sm:block">Sundip
+                University</span>
+        </div>
+        <div class="flex items-center">
+            <a href="#"
+                class="text-sm font-medium text-slate-200 hover:text-white transition-colors drop-shadow-md bg-black/20 px-4 py-2 rounded-full border border-white/10 hover:bg-black/40 backdrop-blur-sm">Help
+                & Support</a>
+        </div>
+    </nav>
+
+    <!-- Decorative Background Elements (Visible on Login) -->
+    <div id="bg-decorators"
+        class="hidden absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
+        <div class="absolute w-[500px] h-[500px] bg-electric-600/20 rounded-full blur-[100px] -top-48 -left-48"></div>
+        <div class="absolute w-[400px] h-[400px] bg-indigo-600/20 rounded-full blur-[80px] bottom-10 -right-20"></div>
+    </div>
+
+    <!-- HERO SECTION -->
+    <div id="hero-section"
+        class="absolute inset-0 z-20 flex flex-col items-center justify-center bg-hero-pattern bg-cover bg-center bg-no-repeat transition-opacity duration-700">
+        <!-- Dark overlay to make text readable over the image -->
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px]"></div>
+
+        <div class="relative z-30 text-center px-4 max-w-3xl fade-enter">
+            <!-- Optional University Logo Here -->
+            <div class="inline-block bg-white p-4 rounded-xl shadow-2xl mb-8">
+                <!-- Replace with actual Sandip University Logo URL if you have it -->
+                <div
+                    class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center border-2 border-slate-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-slate-800" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path d="M12 14l9-5-9-5-9 5 9 5z" />
+                        <path
+                            d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                    </svg>
+                </div>
+            </div>
+
+            <h1 class="text-4xl md:text-6xl font-bold text-white mb-6 tracking-tight shadow-sm">
+                Welcome to <span class="text-electric-500">Sundip University</span>
+            </h1>
+            <p class="text-lg md:text-xl text-slate-200 mb-10 leading-relaxed max-w-2xl mx-auto">
+                Access the enterprise administration system to manage forms and logistics securely.
+            </p>
+
+            <button onclick="showLogin()"
+                class="group relative inline-flex items-center justify-center rounded-full bg-electric-600 px-8 py-4 text-lg font-semibold text-white shadow-xl hover:bg-electric-500 hover:scale-105 hover:shadow-electric-500/30 transition-all duration-300">
+                Proceed to Login
+                <svg class="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform"
+                    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd"
+                        d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z"
+                        clip-rule="evenodd" />
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- LOGIN SECTION (Hidden initially) -->
+    <div id="login-section" class="hidden absolute inset-0 z-30 flex-col items-center justify-center px-4 pt-16">
+
+        <div id="login-card-container" class="w-full max-w-md">
+            <!-- Glassmorphism Card -->
+            <div
+                class="bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl p-8 sm:p-10 relative overflow-hidden">
+
+                <!-- Top Accent Line -->
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-electric-500 to-indigo-500"></div>
+
+                <!-- Header -->
+                <div class="text-center mb-8">
+                    <!-- Logo -->
+                    <div
+                        class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-800/80 border border-slate-600/50 shadow-inner mb-4 overflow-hidden">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-electric-500" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        </svg>
+                    </div>
+                    <h2 class="text-2xl font-bold tracking-tight text-white mb-1">Sundip Logies</h2>
+                    <p class="text-sm text-slate-400">System Administration Login</p>
+                </div>
+
+                <!-- Form -->
+                <form id="login-form" action="#" method="POST" class="space-y-6">
+
+                    <!-- Email Input -->
+                    <div class="relative floating-input group">
+                        <input type="email" id="email" name="email"
+                            class="block w-full px-4 pt-5 pb-2 text-white bg-slate-900/50 border border-slate-600 rounded-lg focus:outline-none focus:border-electric-500 focus:ring-1 focus:ring-electric-500 transition-colors peer placeholder-transparent"
+                            placeholder="name@example.com" required>
+                        <label for="email"
+                            class="absolute left-4 top-3.5 text-slate-400 text-sm transition-all duration-200 pointer-events-none origin-left">Email
+                            Address</label>
+
+                        <!-- Icon -->
+                        <div
+                            class="absolute right-4 top-3.5 text-slate-500 peer-focus:text-electric-500 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
+                                fill="currentColor">
+                                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- Password Input -->
+                    <div class="relative floating-input group">
+                        <input type="password" id="password" name="password"
+                            class="block w-full px-4 pt-5 pb-2 text-white bg-slate-900/50 border border-slate-600 rounded-lg focus:outline-none focus:border-electric-500 focus:ring-1 focus:ring-electric-500 transition-colors peer placeholder-transparent"
+                            placeholder="••••••••" required>
+                        <label for="password"
+                            class="absolute left-4 top-3.5 text-slate-400 text-sm transition-all duration-200 pointer-events-none origin-left">Password</label>
+
+                        <!-- Icon -->
+                        <div
+                            class="absolute right-4 top-3.5 text-slate-500 peer-focus:text-electric-500 transition-colors cursor-pointer">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
+                                fill="currentColor">
+                                <path fill-rule="evenodd"
+                                    d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- Options -->
+                    <div class="flex items-center justify-between text-sm">
+                        <div class="flex items-center">
+                            <input id="remember-me" name="remember-me" type="checkbox"
+                                class="h-4 w-4 rounded border-slate-600 bg-slate-900/50 text-electric-500 focus:ring-electric-500 focus:ring-offset-slate-800 transition duration-150 ease-in-out cursor-pointer">
+                            <label for="remember-me" class="ml-2 block text-slate-300 cursor-pointer">
+                                Remember me
+                            </label>
+                        </div>
+
+                        <div class="text-sm">
+                            <a href="#" class="font-medium text-electric-500 hover:text-electric-400 transition-colors">
+                                Forgot Password?
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div>
+                        <button type="submit" id="login-btn"
+                            class="group relative flex w-full justify-center rounded-lg bg-electric-600 px-4 py-3 text-sm font-semibold text-white shadow-lg hover:bg-electric-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-electric-600 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                                <svg class="h-5 w-5 text-electric-300 group-hover:text-white transition-colors"
+                                    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+                                    aria-hidden="true">
+                                    <path fill-rule="evenodd"
+                                        d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                            </span>
+                            Send OTP
+                        </button>
+                    </div>
+                </form>
+
+                <!-- OTP Form (Hidden initially) -->
+                <form id="otp-form" class="hidden space-y-6">
+                    <p class="text-sm text-slate-300 text-center mb-4">Please enter the 6-digit OTP sent to your email.</p>
+                    <div class="relative floating-input group">
+                        <input type="text" id="otp-input" name="otp" maxlength="6"
+                            class="block w-full px-4 pt-5 pb-2 text-white bg-slate-900/50 border border-slate-600 rounded-lg focus:outline-none focus:border-electric-500 focus:ring-1 focus:ring-electric-500 transition-colors peer placeholder-transparent text-center tracking-widest font-mono text-xl"
+                            placeholder="123456" required>
+                        <label for="otp-input"
+                            class="absolute left-4 top-3.5 text-slate-400 text-sm transition-all duration-200 pointer-events-none origin-left">6-Digit OTP</label>
+                    </div>
+                    <div>
+                        <button type="submit"
+                            class="group relative flex w-full justify-center rounded-lg bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-lg hover:bg-emerald-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0">
+                            Verify and Login
+                        </button>
+                    </div>
+                    <div class="text-center mt-4">
+                        <button type="button" onclick="resetToLogin()" class="text-sm text-slate-400 hover:text-white transition-colors">
+                            &larr; Back to Email
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- System Status Footer -->
+            <div class="mt-8 text-center flex items-center justify-center space-x-2 text-sm text-slate-500">
+                <span class="relative flex h-3 w-3">
+                    <span
+                        class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                </span>
+                <span>System Status: <strong class="text-slate-400 font-medium">Online & Secure</strong></span>
+            </div>
+
+            <!-- Copyright -->
+            <div class="mt-4 text-center text-xs text-slate-600">
+                &copy; 2026 Sundip Logies. All rights reserved.
+            </div>
+
+            <!-- Back Button -->
+            <div class="mt-8 text-center">
+                <button onclick="showHero()"
+                    class="inline-flex items-center text-slate-400 hover:text-white transition-colors text-sm font-medium">
+                    <svg class="h-5 w-5 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M7.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l2.293 2.293a1 1 0 010 1.414z"
+                            clip-rule="evenodd" />
+                    </svg>
+                    Back to Home
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const heroSection = document.getElementById('hero-section');
+        const loginSection = document.getElementById('login-section');
+        const bgDecorators = document.getElementById('bg-decorators');
+
+        function showLogin() {
+            // Fade out hero
+            heroSection.style.opacity = '0';
+
+            setTimeout(() => {
+                heroSection.classList.add('hidden');
+
+                // Show login and background patterns
+                loginSection.classList.remove('hidden');
+                bgDecorators.classList.remove('hidden');
+
+                // Trigger entry animation
+                loginSection.classList.add('flex');
+                document.getElementById('login-card-container').classList.add('fade-enter');
+            }, 500); // Wait for opacity transition
+        }
+
+        function showHero() {
+            // Hide login
+            loginSection.classList.add('hidden');
+            loginSection.classList.remove('flex');
+            bgDecorators.classList.add('hidden');
+
+            // Show hero
+            heroSection.classList.remove('hidden');
+
+            // Fade in
+            setTimeout(() => {
+                heroSection.style.opacity = '1';
+            }, 50);
+        }
+        const loginForm = document.getElementById('login-form');
+        const otpForm = document.getElementById('otp-form');
+        let currentEmail = '';
+
+        function resetToLogin() {
+            otpForm.classList.add('hidden');
+            loginForm.classList.remove('hidden');
+        }
+
+        if (loginForm) {
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                const loginBtn = document.getElementById('login-btn');
+                
+                try {
+                    loginBtn.textContent = 'Sending...';
+                    loginBtn.disabled = true;
+                    
+                    console.log('Sending login request for:', email);
+                    const response = await fetch('http://localhost:3000/api/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, password })
+                    });
+                    const data = await response.json();
+                    console.log('Server response:', data);
+                    
+                    if(data.success) {
+                        // OTP Sent, show OTP form
+                        currentEmail = email;
+                        loginForm.classList.add('hidden');
+                        otpForm.classList.remove('hidden');
+                        alert('OTP sent to your email!');
+                    } else {
+                        alert('Login failed: ' + data.message);
+                    }
+                } catch(err) {
+                    console.error('Error connecting to backend:', err);
+                    alert('Could not connect to the backend server. Make sure it is running!');
+                } finally {
+                    loginBtn.innerHTML = `
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                            <svg class="h-5 w-5 text-electric-300 group-hover:text-white transition-colors" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd" />
+                            </svg>
+                        </span>
+                        Send OTP`;
+                    loginBtn.disabled = false;
+                }
+            });
+        }
+
+        if (otpForm) {
+            otpForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const otp = document.getElementById('otp-input').value;
+                
+                try {
+                    const response = await fetch('http://localhost:3000/api/verify-otp', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: currentEmail, otp })
+                    });
+                    const data = await response.json();
+                    
+                    if(data.success) {
+                        // OTP verified, redirect to dashboard
+                        window.location.href = 'dashboard.html';
+                    } else {
+                        alert('Verification failed: ' + data.message);
+                    }
+                } catch(err) {
+                    console.error('Error connecting to backend:', err);
+                    alert('Could not verify OTP.');
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>
