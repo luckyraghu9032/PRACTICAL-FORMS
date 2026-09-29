@@ -1209,8 +1209,13 @@
                         <label class="fl-label fl-up">Lab Asst Rate (₹/Prac)</label>
                     </div>
                 </div>
-                <button class="btn btn-primary" style="width:100%;" onclick="savePaymentRules()">
-                    <i class="fa-solid fa-floppy-disk" style="margin-right:6px;"></i>Save Payment Rates
+                </div>
+            </div>
+
+            <!-- SUBMIT BUTTON AT BOTTOM -->
+            <div style="margin-top:20px;">
+                <button class="btn btn-primary" id="assign-submit-btn-bottom" style="width:100%;padding:14px;font-size:15px;" onclick="submitAssignClaim()">
+                    <i class="fa-solid fa-check" style="margin-right:8px;"></i>Submit Assignment
                 </button>
             </div>
 
@@ -2433,38 +2438,64 @@
         });
     }
 
+    let _assignSubmitting = false; // Guard against double-click
+
     async function submitAssignClaim() {
+        if (_assignSubmitting) return; // Already submitting, ignore extra clicks
+
         const claimNo = document.getElementById('assign-claim-no').value.trim();
         const examDate = document.getElementById('assign-date').value;
         const timeSlot = document.getElementById('assign-time').value.trim();
         const divBatch = document.getElementById('assign-div').value.trim();
-        
+        const prog = document.getElementById('assign-program').value;
         const school = document.getElementById('assign-school').value.trim();
         const course = document.getElementById('assign-course').value.trim();
         const subject = document.getElementById('assign-subject').value.trim();
         const subType = document.getElementById('assign-sub-type').value;
-        
-        // Determine candidateLevel from program type
-        const prog = document.getElementById('assign-program').value;
-        const candidateLevel = (prog === 'MTECH') ? 'PG' : 'UG';
-        
         const registered = parseInt(document.getElementById('assign-registered').value) || 0;
-        const present = parseInt(document.getElementById('assign-present').value) || 0;
-        
-        if (registered < 0) { alert('Candidates Registered must be a positive number!'); return; }
-        if (present < 0 || present > registered) { alert('Candidates Examined must be between 0 and Candidates Registered!'); return; }
-        
+        const present = parseInt(document.getElementById('assign-present').value);
         const extName = document.getElementById('assign-ext').value;
         const intName = document.getElementById('assign-int').value;
         const labName = document.getElementById('assign-lab').value;
-        
-        if (!claimNo) { alert('Claim Form No is required!'); return; }
+        const candidateLevel = (prog === 'MTECH') ? 'PG' : 'UG';
+
+        // ── Required field validation ──
+        if (!examDate)  { alert('Date of Exam is required!'); return; }
+        if (!claimNo)   { alert('Claim Form No is required!'); return; }
+        if (!prog)      { alert('Please select a Program (B.TECH / M.TECH)!'); return; }
+        if (!document.getElementById('assign-year').value) { alert('Year is required!'); return; }
+        if (!document.getElementById('assign-sem').value)  { alert('Semester is required!'); return; }
+        if (!divBatch)  { alert('Division/Batch is required!'); return; }
+        if (!school)    { alert('School / Stream is required!'); return; }
+        if (!document.getElementById('assign-course-name').value.trim()) { alert('Course Name is required!'); return; }
+        if (!subject)   { alert('Course Code is required!'); return; }
+        if (!timeSlot)  { alert('Time Slot is required!'); return; }
+        if (!subType)   { alert('Subject Type is required!'); return; }
+        if (!registered || registered <= 0) { alert('Candidates Registered must be a positive number!'); return; }
+        if (present === null || isNaN(present) || present < 0) { alert('Candidates Examined cannot be negative!'); return; }
+        if (present > registered) { alert('Candidates Examined cannot exceed Candidates Registered!'); return; }
+        if (!extName && !intName) { alert('At least one examiner (External or Internal) is required!'); return; }
+
+        // ── Duplicate claim number check ──
+        const existing = window.assignmentsDB || [];
+        if (existing.some(a => String(a.claim_no) === String(claimNo) && !document.getElementById('assign-submit-btn').dataset.editing)) {
+            alert(`Claim No. ${claimNo} already exists! Each claim number must be unique.`);
+            return;
+        }
 
         const payload = {
             claimNo, examDate, timeSlot, divBatch,
             school, course, subject, subType, candidateLevel,
             registered, present, extName, intName, labName
         };
+
+        // ── Spinner on both buttons ──
+        _assignSubmitting = true;
+        const btnTop    = document.getElementById('assign-submit-btn');
+        const btnBottom = document.getElementById('assign-submit-btn-bottom');
+        const spinnerHTML = '<i class="fa-solid fa-spinner fa-spin" style="margin-right:6px;"></i>Submitting...';
+        if (btnTop)    { btnTop.innerHTML    = spinnerHTML; btnTop.disabled    = true; }
+        if (btnBottom) { btnBottom.innerHTML = spinnerHTML; btnBottom.disabled = true; }
 
         try {
             const response = await fetch('https://practical-forms.vercel.app/api/assignments', {
@@ -2475,20 +2506,32 @@
             const result = await response.json();
             
             if (result.success) {
-                alert('Assignment Submitted! The Remuneration, Travel, External, and Consolidated tables have been updated.');
+                alert('Assignment Submitted! Tables have been updated.');
                 
                 // Clear assignment inputs
                 document.getElementById('assign-present').value = '';
                 document.getElementById('assign-registered').value = '';
                 document.getElementById('assign-program').value = '';
+                document.getElementById('assign-date').value = '';
+                document.getElementById('assign-time').value = '';
+                document.getElementById('assign-school').value = '';
+                document.getElementById('assign-course-name').value = '';
+                document.getElementById('assign-subject-code').value = '';
+                document.getElementById('assign-subject').value = '';
+                document.getElementById('assign-sub-type').value = '';
+                document.getElementById('assign-div-select').value = '';
+                document.getElementById('assign-batch-select').innerHTML = '<option value="">Batch</option>';
+                document.getElementById('assign-div').value = '';
+                document.getElementById('assign-year').innerHTML = '<option value="">Year</option>';
+                document.getElementById('assign-sem').innerHTML = '<option value="">Sem</option>';
+                document.getElementById('assign-ext').value = '';
+                document.getElementById('assign-int').value = '';
+                document.getElementById('assign-lab').value = '';
+                document.getElementById('assign-course').value = '';
                 
                 // Refresh claims data and regenerate claim number
                 loadClaimsData();
                 initClaimNo();
-                
-                // Reset button back to Submit Assignment
-                const btn = document.getElementById('assign-submit-btn');
-                if (btn) btn.innerHTML = '<i class="fa-solid fa-check" style="margin-right:6px;"></i>Submit Assignment';
                 
                 document.querySelector('[data-section="remuneration"]').click();
             } else {
@@ -2497,6 +2540,12 @@
         } catch (error) {
             console.error('Network Error:', error);
             alert('Failed to connect to the backend server.');
+        } finally {
+            // ── Reset buttons ──
+            _assignSubmitting = false;
+            const resetHTML = '<i class="fa-solid fa-check" style="margin-right:6px;"></i>Submit Assignment';
+            if (btnTop)    { btnTop.innerHTML    = resetHTML; btnTop.disabled    = false; }
+            if (btnBottom) { btnBottom.innerHTML = '<i class="fa-solid fa-check" style="margin-right:8px;"></i>Submit Assignment'; btnBottom.disabled = false; }
         }
     }
 
