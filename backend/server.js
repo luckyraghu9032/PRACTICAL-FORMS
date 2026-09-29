@@ -66,7 +66,11 @@ const initDB = async () => {
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
 
-            INSERT INTO payment_rules (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
+            CREATE TABLE IF NOT EXISTS auth_settings (
+                id INT PRIMARY KEY DEFAULT 1,
+                shared_password VARCHAR(255) DEFAULT 'sandip123'
+            );
+            INSERT INTO auth_settings (id, shared_password) VALUES (1, 'sandip123') ON CONFLICT (id) DO NOTHING;
         `);
         console.log("Database tables initialized.");
     } catch (err) {
@@ -254,6 +258,18 @@ app.post('/api/login', async (req, res) => {
         return res.status(401).json({ success: false, message: 'Unauthorized email address.' });
     }
 
+    try {
+        const authRes = await pool.query('SELECT shared_password FROM auth_settings WHERE id = 1');
+        const sharedPassword = authRes.rows[0].shared_password;
+        
+        if (password !== sharedPassword) {
+            return res.status(401).json({ success: false, message: 'Incorrect password.' });
+        }
+    } catch(err) {
+        console.error('Error fetching password:', err);
+        return res.status(500).json({ success: false, message: 'Database Error' });
+    }
+
     // Generate a random 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
@@ -291,6 +307,51 @@ app.post('/api/verify-otp', (req, res) => {
         res.status(401).json({ success: false, message: 'Invalid or expired OTP.' });
     }
 });
+
+// Forgot Password Route (Send OTP)
+app.post('/api/forgot-password', async (req, res) => {
+    const { email } = req.body;
+    const allowedEmails = [
+        "rahulpatil@sandipuniversity.edu.in",
+        "anirudh.kolpyakwar@sandipuniversity.edu.in",
+        "raghurag172@gmail.com"
+    ];
+
+    if (!allowedEmails.includes(email)) {
+        return res.status(401).json({ success: false, message: 'Unauthorized email address.' });
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    otpStore[email] = otp;
+    setTimeout(() => { delete otpStore[email]; }, 5 * 60 * 1000);
+
+    try {
+        await sendLoginOtp(email, otp, 'Password Reset');
+        res.status(200).json({ success: true, message: 'Password reset OTP has been sent to your email.' });
+    } catch (error) {
+        console.error('Error sending reset OTP:', error);
+        res.status(500).json({ success: false, message: 'Internal Server Error' });
+    }
+});
+
+// Reset Password Route (Verify OTP and Change Password)
+app.post('/api/reset-password', async (req, res) => {
+    const { email, otp, newPassword } = req.body;
+
+    if (otpStore[email] && otpStore[email] === otp) {
+        try {
+            await pool.query('UPDATE auth_settings SET shared_password = $1 WHERE id = 1', [newPassword]);
+            delete otpStore[email];
+            res.status(200).json({ success: true, message: 'Password has been successfully changed for all users!' });
+        } catch(err) {
+            console.error('Error updating password:', err);
+            res.status(500).json({ success: false, message: 'Database Error' });
+        }
+    } else {
+        res.status(401).json({ success: false, message: 'Invalid or expired OTP.' });
+    }
+});
+
 
 // Start the server
 app.listen(PORT, () => {
