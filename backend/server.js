@@ -71,6 +71,8 @@ const initDB = async () => {
                 shared_password VARCHAR(255) DEFAULT 'sandip123'
             );
             INSERT INTO auth_settings (id, shared_password) VALUES (1, 'sandip123') ON CONFLICT (id) DO NOTHING;
+            
+            INSERT INTO payment_rules (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
         `);
         console.log("Database tables initialized.");
     } catch (err) {
@@ -260,14 +262,14 @@ app.post('/api/login', async (req, res) => {
 
     try {
         const authRes = await pool.query('SELECT shared_password FROM auth_settings WHERE id = 1');
-        const sharedPassword = authRes.rows[0].shared_password;
+        const sharedPassword = authRes.rows.length > 0 ? authRes.rows[0].shared_password : 'sandip123';
         
         if (password !== sharedPassword) {
             return res.status(401).json({ success: false, message: 'Incorrect password.' });
         }
     } catch(err) {
         console.error('Error fetching password:', err);
-        return res.status(500).json({ success: false, message: 'Database Error' });
+        return res.status(500).json({ success: false, message: 'Database Error while fetching password.' });
     }
 
     // Generate a random 6-digit OTP
