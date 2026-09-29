@@ -245,9 +245,9 @@ app.post('/api/login', async (req, res) => {
 
     // List of allowed emails
     const allowedEmails = [
-        "raghurag172@gmail.com",
-        "raghuroyalrcb@gmail.com",
-        "raghusde7@gmail.com"
+        "rahulpatil@sandipuniversity.edu.in",
+        "anirudh.kolpyakwar@sandipuniversity.edu.in",
+        "raghurag172@gmail.com"
     ];
 
     if (!allowedEmails.includes(email)) {

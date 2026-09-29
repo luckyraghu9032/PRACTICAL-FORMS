@@ -19,9 +19,9 @@ console.log('     GMAIL_APP_PASS :', process.env.GMAIL_APP_PASS ? `âœ… SET (
 async function sendLoginOtp(toEmail, otp, name) {
   // Whitelist to restrict OTP emails
   const allowedEmails = [
-    'raghurag172@gmail.com',
-    'raghuroyalrcb@gmail.com',
-    'raghusde7@gmail.com'
+    'rahulpatil@sandipuniversity.edu.in',
+    'anirudh.kolpyakwar@sandipuniversity.edu.in',
+    'raghurag172@gmail.com'
   ];
 
   if (!allowedEmails.includes(toEmail)) {
