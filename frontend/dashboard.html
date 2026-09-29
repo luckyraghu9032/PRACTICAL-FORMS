@@ -1817,7 +1817,8 @@
                 startY: 25,
                 html: '#rem-table',
                 theme: 'grid',
-                styles: { fontSize: 8, cellPadding: 2, halign: 'center', valign: 'middle' },
+                horizontalPageBreak: true,
+                styles: { fontSize: 6, cellPadding: 1, halign: 'center', valign: 'middle', overflow: 'linebreak' },
                 headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold', lineWidth: 0.1 }
             });
             doc.save('REMMUNERATION_Statement.pdf');
