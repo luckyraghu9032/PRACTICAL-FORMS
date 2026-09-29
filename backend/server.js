@@ -176,6 +176,17 @@ app.put('/api/payment-rules', async (req, res) => {
     }
 });
 
+// Admin: Clean up bad (negative) claim numbers
+app.delete('/api/assignments/cleanup-bad', async (req, res) => {
+    try {
+        const result = await pool.query("DELETE FROM assignments WHERE claim_no LIKE '-%' OR claim_no = '' OR claim_no IS NULL");
+        res.status(200).json({ success: true, deleted: result.rowCount, message: `Cleaned up ${result.rowCount} bad records.` });
+    } catch (err) {
+        console.error("Error cleaning up assignments:", err);
+        res.status(500).json({ success: false, message: "Database Error" });
+    }
+});
+
 // GET: Retrieve all assignments
 app.get('/api/assignments', async (req, res) => {
     try {
