@@ -914,14 +914,21 @@
                 </div>
 
 
-                <div style="display:grid;grid-template-columns:repeat(6, 1fr);gap:15px;margin-bottom:20px;">
+                <div style="display:grid;grid-template-columns:repeat(7, 1fr);gap:15px;margin-bottom:20px;">
                     <div class="fl-wrap">
                         <input class="fl-input" type="date" id="assign-date" placeholder=" ">
                         <label class="fl-label fl-up">Date of Exam</label>
                     </div>
                     <div class="fl-wrap">
-                        <input class="fl-input" type="text" id="assign-claim-no" placeholder=" ">
-                        <label class="fl-label">Claim Form No</label>
+                        <input class="fl-input" type="text" id="assign-claim-no" placeholder=" " readonly style="background:var(--bg-elevated);cursor:not-allowed;color:var(--accent);font-weight:600;">
+                        <label class="fl-label fl-up">Claim Form No</label>
+                    </div>
+                    <div class="fl-wrap">
+                        <select class="fl-input" id="assign-program" style="padding-top:12px;" onchange="updateProgramType()">
+                            <option value="">Program</option>
+                            <option value="BTECH">B.TECH</option>
+                            <option value="MTECH">M.TECH</option>
+                        </select>
                     </div>
                     <div class="fl-wrap">
                         <select class="fl-input" id="assign-year" style="padding-top:12px;" onchange="updateCourse()">
@@ -992,6 +999,44 @@
                             function updateDivBatch() {
                                 document.getElementById('assign-div').value = document.getElementById('assign-batch-select').value;
                             }
+
+                            function updateProgramType() {
+                                const prog = document.getElementById('assign-program').value;
+                                const yearSelect = document.getElementById('assign-year');
+                                const semSelect = document.getElementById('assign-sem');
+                                const currentYear = yearSelect.value;
+
+                                yearSelect.innerHTML = '<option value="">Year</option>';
+                                semSelect.innerHTML = '<option value="">Sem</option>';
+
+                                if (prog === 'MTECH') {
+                                    // M.TECH: only FE and SE, semesters I, II, III, IV
+                                    ['FE', 'SE'].forEach(y => yearSelect.add(new Option(y, y)));
+                                    // Set candidateLevel to PG
+                                    const cl = document.getElementById('master-candidate-level');
+                                    if (cl) cl.value = 'PG';
+                                } else {
+                                    // B.TECH: FE, SE, TE, BE
+                                    ['FE', 'SE', 'TE', 'BE'].forEach(y => yearSelect.add(new Option(y, y)));
+                                    // Set candidateLevel to UG
+                                    const cl = document.getElementById('master-candidate-level');
+                                    if (cl) cl.value = 'UG';
+                                }
+                                updateCourse();
+                            }
+
+                            // Auto-generate claim number on page load
+                            async function initClaimNo() {
+                                try {
+                                    const res = await fetch('https://practical-forms.vercel.app/api/assignments');
+                                    const data = await res.json();
+                                    const count = (data.success && data.data) ? data.data.length : 0;
+                                    document.getElementById('assign-claim-no').value = count + 1;
+                                } catch(e) {
+                                    document.getElementById('assign-claim-no').value = 1;
+                                }
+                            }
+                            document.addEventListener('DOMContentLoaded', initClaimNo);
                         </script>
                     </div>
                 </div>
@@ -1029,25 +1074,36 @@
                 <input type="hidden" id="assign-course">
                 <script>
                     function updateCourse() {
+                        const prog = document.getElementById('assign-program').value;
                         const cName = document.getElementById('assign-course-name').value;
                         const yr = document.getElementById('assign-year').value;
-                        const sm = document.getElementById('assign-sem').value;
                         const semSelect = document.getElementById('assign-sem');
-                        const semesterOptions = {
-                            FE: ['I', 'II'],
-                            SE: ['III', 'IV'],
-                            TE: ['V', 'VI'],
-                            BE: ['VII', 'VIII']
-                        };
-                        const selectedSem = sm;
+                        const sm = semSelect.value;
+
+                        // Determine semester options based on program type
+                        let semesterOptions;
+                        if (prog === 'MTECH') {
+                            // M.TECH: all 4 semesters as I, II, III, IV regardless of year
+                            semesterOptions = { FE: ['I', 'II'], SE: ['III', 'IV'] };
+                        } else {
+                            // B.TECH: standard
+                            semesterOptions = {
+                                FE: ['I', 'II'],
+                                SE: ['III', 'IV'],
+                                TE: ['V', 'VI'],
+                                BE: ['VII', 'VIII']
+                            };
+                        }
+
                         semSelect.innerHTML = '<option value="">Sem</option>';
                         (semesterOptions[yr] || []).forEach(semester => {
                             semSelect.add(new Option(semester, semester));
                         });
-                        semSelect.value = selectedSem;
+                        semSelect.value = sm;
+
                         let val = cName;
                         if (yr) val += (val ? " - " : "") + "Yr " + yr;
-                        if (sm) val += (val ? " - " : "") + "Sem " + sm;
+                        if (semSelect.value) val += (val ? " - " : "") + "Sem " + semSelect.value;
                         document.getElementById('assign-course').value = val;
                     }
                 </script>
@@ -1063,14 +1119,26 @@
                         </select>
                     </div>
                     <div class="fl-wrap">
-                        <input class="fl-input" type="number" id="assign-registered" placeholder=" ">
+                        <input class="fl-input" type="number" id="assign-registered" placeholder=" " min="0"
+                            oninput="this.value = Math.max(0, parseInt(this.value)||0); validatePresent();">
                         <label class="fl-label">Candidates Registered</label>
                     </div>
                     <div class="fl-wrap">
-                        <input class="fl-input" type="number" id="assign-present" placeholder=" ">
+                        <input class="fl-input" type="number" id="assign-present" placeholder=" " min="0"
+                            oninput="validatePresent();">
                         <label class="fl-label">Candidates Examined (Present)</label>
                     </div>
                 </div>
+                <script>
+                    function validatePresent() {
+                        const reg = parseInt(document.getElementById('assign-registered').value) || 0;
+                        const presEl = document.getElementById('assign-present');
+                        let pres = parseInt(presEl.value) || 0;
+                        if (pres < 0) pres = 0;
+                        if (pres > reg) pres = reg;
+                        presEl.value = pres || '';
+                    }
+                </script>
 
                 <div style="border-top:1px solid var(--border);margin:20px 0;"></div>
                 <div class="panel-header" style="padding-bottom:10px;">
@@ -2375,10 +2443,16 @@
         const course = document.getElementById('assign-course').value.trim();
         const subject = document.getElementById('assign-subject').value.trim();
         const subType = document.getElementById('assign-sub-type').value;
-        const candidateLevel = document.getElementById('master-candidate-level').value || 'UG';
+        
+        // Determine candidateLevel from program type
+        const prog = document.getElementById('assign-program').value;
+        const candidateLevel = (prog === 'MTECH') ? 'PG' : 'UG';
         
         const registered = parseInt(document.getElementById('assign-registered').value) || 0;
         const present = parseInt(document.getElementById('assign-present').value) || 0;
+        
+        if (registered < 0) { alert('Candidates Registered must be a positive number!'); return; }
+        if (present < 0 || present > registered) { alert('Candidates Examined must be between 0 and Candidates Registered!'); return; }
         
         const extName = document.getElementById('assign-ext').value;
         const intName = document.getElementById('assign-int').value;
@@ -2404,12 +2478,13 @@
                 alert('Assignment Submitted! The Remuneration, Travel, External, and Consolidated tables have been updated.');
                 
                 // Clear assignment inputs
-                document.getElementById('assign-claim-no').value = '';
                 document.getElementById('assign-present').value = '';
                 document.getElementById('assign-registered').value = '';
+                document.getElementById('assign-program').value = '';
                 
-                // Refresh claims data and navigate to Remuneration
+                // Refresh claims data and regenerate claim number
                 loadClaimsData();
+                initClaimNo();
                 
                 // Reset button back to Submit Assignment
                 const btn = document.getElementById('assign-submit-btn');
