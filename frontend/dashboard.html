@@ -1978,7 +1978,7 @@
 
     async function loadPaymentRules() {
         try {
-            const res = await fetch('http://localhost:3000/api/payment-rules');
+            const res = await fetch('https://practical-forms.vercel.app/api/payment-rules');
             const data = await res.json();
             if (data.success && data.data) {
                 const r = data.data;
@@ -2009,7 +2009,7 @@
             labRate: parseFloat(document.getElementById('master-lab-rate').value) || 70
         };
         try {
-            const res = await fetch('http://localhost:3000/api/payment-rules', {
+            const res = await fetch('https://practical-forms.vercel.app/api/payment-rules', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(rates)
@@ -2070,7 +2070,7 @@
 
         try {
             tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:20px;">Loading staff data...</td></tr>';
-            const response = await fetch('http://localhost:3000/api/staff');
+            const response = await fetch('https://practical-forms.vercel.app/api/staff');
             const data = await response.json();
             
             if(data.success && data.data.length > 0) {
@@ -2194,7 +2194,7 @@
 
         try {
             tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:20px;">Loading...</td></tr>';
-            const response = await fetch('http://localhost:3000/api/staff');
+            const response = await fetch('https://practical-forms.vercel.app/api/staff');
             const data = await response.json();
             
             if(data.success && data.data.length > 0) {
@@ -2279,7 +2279,7 @@
         if (!confirm('Are you sure you want to delete this staff member?')) return;
         
         try {
-            const response = await fetch('http://localhost:3000/api/staff/' + id, { method: 'DELETE' });
+            const response = await fetch('https://practical-forms.vercel.app/api/staff/' + id, { method: 'DELETE' });
             const result = await response.json();
             if (result.success) {
                 alert('Staff deleted successfully.');
@@ -2329,7 +2329,7 @@
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
             
             const editId = document.getElementById('master-staff-hidden-id') ? document.getElementById('master-staff-hidden-id').value : null;
-            const url = editId ? `http://localhost:3000/api/staff/${editId}` : 'http://localhost:3000/api/staff';
+            const url = editId ? `https://practical-forms.vercel.app/api/staff/${editId}` : 'https://practical-forms.vercel.app/api/staff';
             const method = editId ? 'PUT' : 'POST';
 
             const response = await fetch(url, {
@@ -2420,7 +2420,7 @@
         };
 
         try {
-            const response = await fetch('http://localhost:3000/api/assignments', {
+            const response = await fetch('https://practical-forms.vercel.app/api/assignments', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -2976,7 +2976,7 @@
 
     async function loadClaimsData() {
         try {
-            const response = await fetch('http://localhost:3000/api/assignments');
+            const response = await fetch('https://practical-forms.vercel.app/api/assignments');
             const data = await response.json();
             
             window.assignmentsDB = data.data || [];
@@ -3262,7 +3262,7 @@
         if(!confirm(`Are you sure you want to delete assignment ${claimNo}?`)) return;
 
         try {
-            const res = await fetch(`http://localhost:3000/api/assignments/${claimNo}`, {
+            const res = await fetch(`https://practical-forms.vercel.app/api/assignments/${claimNo}`, {
                 method: 'DELETE'
             });
             const result = await res.json();

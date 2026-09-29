@@ -259,7 +259,7 @@
 
         try {
             tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px;">Loading staff data...</td></tr>';
-            const response = await fetch('http://localhost:3000/api/staff');
+            const response = await fetch('https://practical-forms.vercel.app/api/staff');
             const data = await response.json();
             
             if(data.success && data.data.length > 0) {
@@ -333,7 +333,7 @@
             const originalText = btn.innerHTML;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
             
-            const response = await fetch('http://localhost:3000/api/staff', {
+            const response = await fetch('https://practical-forms.vercel.app/api/staff', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(staff)
@@ -403,7 +403,7 @@
         };
 
         try {
-            const response = await fetch('http://localhost:3000/api/assignments', {
+            const response = await fetch('https://practical-forms.vercel.app/api/assignments', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -432,7 +432,7 @@
 
     async function loadClaimsData() {
         try {
-            const response = await fetch('http://localhost:3000/api/assignments');
+            const response = await fetch('https://practical-forms.vercel.app/api/assignments');
             const data = await response.json();
             
             const remTbody = document.getElementById('remuneration-table-body');
