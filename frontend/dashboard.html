@@ -1382,11 +1382,10 @@
                                 <th style="padding:12px; color:var(--text-muted); font-size:12px; text-transform:uppercase;">NAME OF EXAMINER</th>
                                 <th style="padding:12px; color:var(--text-muted); font-size:12px; text-transform:uppercase;">STAFF ID</th>
                                 <th style="padding:12px; color:var(--text-muted); font-size:12px; text-transform:uppercase;">REUMUNARATION AMT</th>
-                                <th style="padding:12px; color:var(--text-muted); font-size:12px; text-transform:uppercase;">TOTAL</th>
                             </tr>
                         </thead>
                         <tbody id="consolidated-table-body">
-                            <tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-muted);">No consolidated reports generated yet.</td></tr>
+                            <tr><td colspan="4" style="text-align:center; padding:20px; color:var(--text-muted);">No consolidated reports generated yet.</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -2994,6 +2993,8 @@
                 remTbody.innerHTML = '';
                 consTbody.innerHTML = '';
                 travTbody.innerHTML = '';
+                
+                let totalConsolidatedRemuneration = 0;
 
                 filteredAssignments.forEach((claim, idx) => {
                     const courseStr = (claim.course || '').toUpperCase();
@@ -3063,8 +3064,8 @@
                                 <td>${claim.int_name} (Internal)</td>
                                 <td>${intStaff.id || '-'}</td>
                                 <td>${intSubtotal}</td>
-                                <td>${grandTotal}</td>
                             </tr>`;
+                        totalConsolidatedRemuneration += intSubtotal;
                     }
 
                     // External / Travel / Consolidated
@@ -3078,8 +3079,9 @@
                                 <td>${claim.ext_name} (External)</td>
                                 <td>${extStaff.id || '-'}</td>
                                 <td>${extSubtotal}</td>
-                                <td>${grandTotal}</td>
                             </tr>`;
+                        totalConsolidatedRemuneration += extSubtotal;
+                            
 
 
                         // Travel (Only for Non-Sandip University Staff)
@@ -3169,11 +3171,17 @@
                                 <td>${claim.lab_name} (Lab Asst)</td>
                                 <td>${labStaff.id || '-'}</td>
                                 <td>${labAmount}</td>
-                                <td>${grandTotal}</td>
                             </tr>`;
+                            totalConsolidatedRemuneration += labAmount;
                         }
                     }
                 });
+                
+                consTbody.innerHTML += `
+                    <tr style="border-top: 2px solid var(--border); font-weight: bold; background: rgba(255, 255, 255, 0.05);">
+                        <td colspan="3" style="text-align: right; padding: 20px;">GRAND TOTAL:</td>
+                        <td style="padding: 20px; color: var(--electric-500);">${totalConsolidatedRemuneration}</td>
+                    </tr>`;
 
                 // Fallbacks if empty
                 if(remTbody.innerHTML === '') remTbody.innerHTML = '<tr><td colspan="25" style="text-align:center; padding:20px; color:var(--text-muted);">No remunerations generated yet.</td></tr>';
