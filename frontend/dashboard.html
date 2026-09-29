@@ -904,7 +904,6 @@
                 </div>
                 <div style="display:flex;gap:10px;align-items:center;">
                     <button class="btn btn-outline" type="button" onclick="showManageAssignments()"><i class="fa-solid fa-list-check" style="margin-right:6px;"></i>Manage Assign Form</button>
-                    <button class="btn btn-primary" id="assign-submit-btn" onclick="submitAssignClaim()"><i class="fa-solid fa-check" style="margin-right:6px;"></i>Submit Assignment</button>
                 </div>
             </div>
             
@@ -2488,12 +2487,10 @@
             registered, present, extName, intName, labName
         };
 
-        // ── Spinner on both buttons ──
+        // ── Spinner on bottom button ──
         _assignSubmitting = true;
-        const btnTop    = document.getElementById('assign-submit-btn');
         const btnBottom = document.getElementById('assign-submit-btn-bottom');
         const spinnerHTML = '<i class="fa-solid fa-spinner fa-spin" style="margin-right:6px;"></i>Submitting...';
-        if (btnTop)    { btnTop.innerHTML    = spinnerHTML; btnTop.disabled    = true; }
         if (btnBottom) { btnBottom.innerHTML = spinnerHTML; btnBottom.disabled = true; }
 
         try {
@@ -2540,10 +2537,8 @@
             console.error('Network Error:', error);
             alert('Failed to connect to the backend server.');
         } finally {
-            // ── Reset buttons ──
+            // ── Reset bottom button ──
             _assignSubmitting = false;
-            const resetHTML = '<i class="fa-solid fa-check" style="margin-right:6px;"></i>Submit Assignment';
-            if (btnTop)    { btnTop.innerHTML    = resetHTML; btnTop.disabled    = false; }
             if (btnBottom) { btnBottom.innerHTML = '<i class="fa-solid fa-check" style="margin-right:8px;"></i>Submit Assignment'; btnBottom.disabled = false; }
         }
     }
