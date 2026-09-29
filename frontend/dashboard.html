@@ -3325,37 +3325,74 @@
         const assign = window.assignmentsDB.find(a => a.claim_no === claimNo);
         if (!assign) return;
 
-        // Populate fields
+        // ── Claim No (readonly, just set value) ──
         document.getElementById('assign-claim-no').value = assign.claim_no;
-        if(assign.exam_date) document.getElementById('assign-date').value = assign.exam_date.split('T')[0];
+        document.getElementById('assign-claim-no').dataset.editing = 'true';
+
+        // ── Date & Time ──
+        if (assign.exam_date) document.getElementById('assign-date').value = assign.exam_date.split('T')[0];
         document.getElementById('assign-time').value = assign.time_slot || '';
-        document.getElementById('assign-div-select').value = assign.div_batch ? assign.div_batch.split('-')[0] : '';
-        if (document.getElementById('assign-div-select').value) {
+
+        // ── Program (B.TECH / M.TECH) based on candidate_level ──
+        const prog = (assign.candidate_level || '').toUpperCase() === 'PG' ? 'MTECH' : 'BTECH';
+        document.getElementById('assign-program').value = prog;
+        
+        // Trigger program type update to repopulate Year options
+        updateProgramType();
+
+        // ── Parse Year and Sem from stored course string (e.g. "SL - Yr SE - Sem III") ──
+        let parsedYear = '', parsedSem = '', parsedCourseName = '';
+        const courseStr = assign.course || '';
+        const yrMatch  = courseStr.match(/Yr\s+(\w+)/);
+        const semMatch = courseStr.match(/Sem\s+(\w+)/);
+        if (yrMatch)  parsedYear = yrMatch[1];
+        if (semMatch) parsedSem  = semMatch[1];
+        // Course name is the part before the first " - Yr"
+        const dashIdx = courseStr.indexOf(' - Yr');
+        parsedCourseName = dashIdx >= 0 ? courseStr.substring(0, dashIdx).trim() : courseStr;
+
+        // ── Set Year, trigger sem population, then set Sem ──
+        document.getElementById('assign-year').value = parsedYear;
+        updateCourse(); // populate sem options for selected year
+        document.getElementById('assign-sem').value = parsedSem;
+
+        // ── Course Name & Code ──
+        document.getElementById('assign-course-name').value = parsedCourseName;
+        document.getElementById('assign-subject-code').value = assign.subject || '';
+        document.getElementById('assign-subject').value = assign.subject || '';
+        updateCourse(); // update hidden assign-course field
+
+        // ── Division / Batch ──
+        const divPart = assign.div_batch ? assign.div_batch.split('-')[0] : '';
+        document.getElementById('assign-div-select').value = divPart;
+        if (divPart) {
             updateBatchOptions();
             document.getElementById('assign-batch-select').value = assign.div_batch || '';
             updateDivBatch();
         }
 
+        // ── School ──
         document.getElementById('assign-school').value = assign.school || '';
-        document.getElementById('assign-course').value = assign.course || '';
-        document.getElementById('assign-subject-code').value = assign.subject || '';
-        document.getElementById('assign-subject').value = assign.subject || '';
+
+        // ── Subject Type & Candidates ──
         document.getElementById('assign-sub-type').value = assign.sub_type || '';
         document.getElementById('assign-registered').value = assign.registered || '';
         document.getElementById('assign-present').value = assign.present || '';
+
+        // ── Staff ──
         document.getElementById('assign-ext').value = assign.ext_name || '';
         document.getElementById('assign-int').value = assign.int_name || '';
         document.getElementById('assign-lab').value = assign.lab_name || '';
-        document.getElementById('master-candidate-level').value = assign.candidate_level || ((assign.course || '').toUpperCase().includes('PG') ? 'PG' : 'UG');
 
-        // Change button to Update Assignment
-        const btn = document.getElementById('assign-submit-btn');
-        if (btn) btn.innerHTML = '<i class="fa-solid fa-pen-to-square" style="margin-right:6px;"></i>Update Assignment';
+        // ── Candidate Level ──
+        document.getElementById('master-candidate-level').value = assign.candidate_level || 'UG';
 
-        alert(`Loaded assignment ${claimNo} for editing. Please scroll up to the Assign Claim form.`);
-        
-        // Scroll to the assign form
-        document.getElementById('section-assign-claim').scrollIntoView({ behavior: 'smooth' });
+        // ── Update bottom button to "Update Assignment" ──
+        const btnBottom = document.getElementById('assign-submit-btn-bottom');
+        if (btnBottom) btnBottom.innerHTML = '<i class="fa-solid fa-pen-to-square" style="margin-right:8px;"></i>Update Assignment';
+
+        // ── Scroll to top of assign form ──
+        document.getElementById('section-assign-claim').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     async function deleteAssignment(claimNo) {
