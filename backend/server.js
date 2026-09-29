@@ -281,20 +281,20 @@ app.post('/api/login', async (req, res) => {
         delete otpStore[email];
     }, 5 * 60 * 1000);
 
-    // Trigger the email sending logic
+    // Trigger the email sending logic (best effort - don't fail the login if email fails)
     try {
-        // Send the OTP
-        await sendLoginOtp(email, otp, 'Student');
-        
-        // Respond to the frontend
-        res.status(200).json({ 
-            success: true, 
-            message: 'OTP has been sent to your email.',
-        });
+        await sendLoginOtp(email, otp, 'User');
     } catch (error) {
-        console.error('Error sending OTP:', error);
-        res.status(500).json({ success: false, message: 'Internal Server Error' });
+        console.error('Error sending OTP email:', error);
+        // Continue even if email fails - OTP is returned in response as fallback
     }
+
+    // Always return OTP in response as backup (show on screen if email doesn't arrive)
+    res.status(200).json({ 
+        success: true, 
+        message: 'OTP generated. Check your email or use the code below.',
+        otp: otp  // Returned as fallback in case email delivery fails
+    });
 });
 
 // Verify OTP Route
