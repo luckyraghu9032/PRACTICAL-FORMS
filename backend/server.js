@@ -251,8 +251,19 @@ app.delete('/api/assignments/:claimNo', async (req, res) => {
 });
 
 
-// In-memory store for OTPs
-const otpStore = {};
+// ── Ensure otp_store table exists (runs on first request) ──
+let otpTableReady = false;
+async function ensureOtpTable() {
+    if (otpTableReady) return;
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS otp_store (
+            email       VARCHAR(255) PRIMARY KEY,
+            otp         VARCHAR(10)  NOT NULL,
+            expires_at  TIMESTAMPTZ  NOT NULL
+        )
+    `);
+    otpTableReady = true;
+}
 
 // Login Route
 app.post('/api/login', async (req, res) => {
@@ -285,19 +296,27 @@ app.post('/api/login', async (req, res) => {
 
     // Generate a random 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
 
-    // Store OTP in memory (expires in 5 minutes)
-    otpStore[email] = otp;
-    setTimeout(() => {
-        delete otpStore[email];
-    }, 5 * 60 * 1000);
+    try {
+        await ensureOtpTable();
+        // Upsert OTP into database
+        await pool.query(
+            `INSERT INTO otp_store (email, otp, expires_at)
+             VALUES ($1, $2, $3)
+             ON CONFLICT (email) DO UPDATE SET otp = $2, expires_at = $3`,
+            [email, otp, expiresAt]
+        );
+    } catch (err) {
+        console.error('Error saving OTP to DB:', err);
+        return res.status(500).json({ success: false, message: 'Database Error while saving OTP.' });
+    }
 
-    // Trigger the email sending logic (best effort - don't fail the login if email fails)
+    // Trigger the email sending logic
     try {
         await sendLoginOtp(email, otp, 'User');
     } catch (error) {
         console.error('Error sending OTP email:', error);
-        // Continue even if email fails - OTP is returned in response as fallback
     }
 
     // Do not return the OTP in the response for security reasons!
@@ -308,15 +327,38 @@ app.post('/api/login', async (req, res) => {
 });
 
 // Verify OTP Route
-app.post('/api/verify-otp', (req, res) => {
+app.post('/api/verify-otp', async (req, res) => {
     const { email, otp } = req.body;
 
-    if (otpStore[email] && otpStore[email] === otp) {
-        // OTP matches, clear it and allow login
-        delete otpStore[email];
+    try {
+        await ensureOtpTable();
+        const result = await pool.query(
+            `SELECT otp, expires_at FROM otp_store WHERE email = $1`,
+            [email]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(401).json({ success: false, message: 'Invalid or expired OTP.' });
+        }
+
+        const { otp: storedOtp, expires_at } = result.rows[0];
+
+        if (new Date() > new Date(expires_at)) {
+            await pool.query('DELETE FROM otp_store WHERE email = $1', [email]);
+            return res.status(401).json({ success: false, message: 'OTP has expired. Please request a new one.' });
+        }
+
+        if (storedOtp !== String(otp).trim()) {
+            return res.status(401).json({ success: false, message: 'Invalid OTP. Please check your email.' });
+        }
+
+        // OTP matched — delete it so it can't be reused
+        await pool.query('DELETE FROM otp_store WHERE email = $1', [email]);
         res.status(200).json({ success: true, message: 'OTP verified successfully.' });
-    } else {
-        res.status(401).json({ success: false, message: 'Invalid or expired OTP.' });
+
+    } catch (err) {
+        console.error('Error verifying OTP:', err);
+        res.status(500).json({ success: false, message: 'Database Error during OTP verification.' });
     }
 });
 
