@@ -20,7 +20,7 @@ async function sendLoginOtp(toEmail, otp, name) {
   // Whitelist to restrict OTP emails
   const allowedEmails = [
     'rahulpatil@sandipuniversity.edu.in',
-    'anirudh.kolpyakwar@sandipuniversity.edu.in',
+    'mallikarjunraochintre@gmail.com',
     'raghurag172@gmail.com'
   ];
 

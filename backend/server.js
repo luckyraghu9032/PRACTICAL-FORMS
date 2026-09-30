@@ -97,7 +97,7 @@ app.get('/api/staff', async (req, res) => {
 // POST: Save new staff from Master Form
 app.post('/api/staff', async (req, res) => {
     const { type, id, name, designation, college, distance, bankName, accNo, ifsc, branch } = req.body;
-    
+
     try {
         const result = await pool.query(
             `INSERT INTO staff 
@@ -116,7 +116,7 @@ app.post('/api/staff', async (req, res) => {
 app.put('/api/staff/:id', async (req, res) => {
     const { id: staffId } = req.params;
     const { type, id, name, designation, college, distance, bankName, accNo, ifsc, branch } = req.body;
-    
+
     try {
         const result = await pool.query(
             `UPDATE staff SET 
@@ -202,11 +202,11 @@ app.get('/api/assignments', async (req, res) => {
 app.post('/api/assignments', async (req, res) => {
     const { claimNo, examDate, timeSlot, divBatch, school, course, subject, subType, registered, present, extName, intName, labName } = req.body;
     const candidateLevel = String(req.body.candidateLevel || 'UG').trim().toUpperCase() === 'PG' ? 'PG' : 'UG';
-    
+
     try {
         // Check if claim_no already exists
         const existing = await pool.query('SELECT id FROM assignments WHERE claim_no = $1', [claimNo]);
-        
+
         let result;
         if (existing.rows.length > 0) {
             // Update existing
@@ -263,8 +263,8 @@ app.post('/api/login', async (req, res) => {
     // List of allowed emails
     const allowedEmails = [
         "rahulpatil@sandipuniversity.edu.in",
-        "anirudh.kolpyakwar@sandipuniversity.edu.in",
-        "raghurag172@gmail.com"
+        "mallikarjunraochintre@gmail.com",
+        "raghurag172@gmail.com",
     ];
 
     if (!allowedEmails.includes(email)) {
@@ -274,11 +274,11 @@ app.post('/api/login', async (req, res) => {
     try {
         const authRes = await pool.query('SELECT shared_password FROM auth_settings WHERE id = 1');
         const sharedPassword = authRes.rows.length > 0 ? authRes.rows[0].shared_password : 'sandip123';
-        
+
         if (password !== sharedPassword) {
             return res.status(401).json({ success: false, message: 'Incorrect password.' });
         }
-    } catch(err) {
+    } catch (err) {
         console.error('Error fetching password:', err);
         return res.status(500).json({ success: false, message: 'Database Error while fetching password.' });
     }
@@ -301,8 +301,8 @@ app.post('/api/login', async (req, res) => {
     }
 
     // Always return OTP in response as backup (show on screen if email doesn't arrive)
-    res.status(200).json({ 
-        success: true, 
+    res.status(200).json({
+        success: true,
         message: 'OTP generated. Check your email or use the code below.',
         otp: otp  // Returned as fallback in case email delivery fails
     });
@@ -356,7 +356,7 @@ app.post('/api/reset-password', async (req, res) => {
             await pool.query('UPDATE auth_settings SET shared_password = $1 WHERE id = 1', [newPassword]);
             delete otpStore[email];
             res.status(200).json({ success: true, message: 'Password has been successfully changed for all users!' });
-        } catch(err) {
+        } catch (err) {
             console.error('Error updating password:', err);
             res.status(500).json({ success: false, message: 'Database Error' });
         }
