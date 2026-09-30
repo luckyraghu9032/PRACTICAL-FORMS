@@ -8,7 +8,20 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
-app.use(cors()); // Allow cross-origin requests from the frontend
+app.use(cors({
+    origin: [
+        'http://127.0.0.1:5500',
+        'http://localhost:5500',
+        'http://127.0.0.1:3000',
+        'http://localhost:3000',
+        'https://practical-forms.vercel.app',
+        /\.vercel\.app$/   // allow all vercel preview deployments
+    ],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
+}));
+app.options('*', cors()); // Handle preflight requests
 app.use(express.json()); // Parse JSON request bodies
 
 // Health Check Route

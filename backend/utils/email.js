@@ -69,27 +69,34 @@ async function sendLoginOtp(toEmail, otp, name) {
   // Production Email sending via Resend API (Vercel)
   // ==========================================
   const resendApiKey = process.env.RESEND_API_KEY;
+  let resendSuccess = false;
   if (resendApiKey) {
     try {
       const { Resend } = require('resend');
       const resend = new Resend(resendApiKey);
 
       const { data, error } = await resend.emails.send({
-        from: 'Sandip University FAS <onboarding@resend.dev>', // Update this when you have a verified domain
+        from: 'Sandip University FAS <onboarding@resend.dev>',
         to: toEmail,
         subject: 'Your Login Verification Code - Sandip University FAS',
         html,
       });
 
       if (error) {
-        console.error('  Resend API failed:', error.message, '\n');
+        // Log full error so we can debug which email fails
+        console.error('  Resend API failed for', toEmail, ':', JSON.stringify(error), '\n');
       } else {
         console.log('  Login OTP sent via Resend to ' + toEmail + ' (ID: ' + data.id + ')\n');
-        return; // Success, skip other methods
+        resendSuccess = true;
       }
     } catch (err) {
       console.error('  Resend send exception:', err.message, '\n');
     }
+  }
+
+  // Always also try Gmail SMTP as fallback (especially for non-verified Resend recipients)
+  if (!resendSuccess) {
+    console.log('  Resend did not succeed for', toEmail, '— trying Gmail SMTP fallback...\n');
   }
   // â”€â”€ Email sending via Gmail SMTP (Nodemailer) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const gmailUser = process.env.GMAIL_USER;
