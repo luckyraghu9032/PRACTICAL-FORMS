@@ -237,11 +237,6 @@
                 <!-- OTP Form (Hidden initially) -->
                 <form id="otp-form" class="hidden space-y-6">
                     <p class="text-sm text-slate-300 text-center mb-2">Please enter the 6-digit OTP sent to your email.</p>
-                    <!-- OTP display box (shown as fallback if email fails) -->
-                    <div id="otp-display-box" class="hidden text-center bg-slate-800 border border-amber-500/40 rounded-lg p-3 mb-2">
-                        <p class="text-xs text-amber-400 mb-1">⚠️ If email didn't arrive, use this OTP:</p>
-                        <p id="otp-display-code" class="text-2xl font-mono font-bold text-white tracking-widest"></p>
-                    </div>
                     <div class="relative floating-input group">
                         <input type="text" id="otp-input" name="otp" maxlength="6"
                             class="block w-full px-4 pt-5 pb-2 text-white bg-slate-900/50 border border-slate-600 rounded-lg focus:outline-none focus:border-electric-500 focus:ring-1 focus:ring-electric-500 transition-colors peer placeholder-transparent text-center tracking-widest font-mono text-xl"
@@ -424,14 +419,6 @@
                         currentEmail = email;
                         loginForm.classList.add('hidden');
                         otpForm.classList.remove('hidden');
-                        // Show OTP on screen as fallback (in case email doesn't arrive)
-                        if (data.otp) {
-                            document.getElementById('otp-display-box').classList.remove('hidden');
-                            document.getElementById('otp-display-code').textContent = data.otp;
-                            document.getElementById('otp-input').value = data.otp;
-                        } else {
-                            document.getElementById('otp-display-box').classList.add('hidden');
-                        }
                     } else {
                         alert('Login failed: ' + data.message);
                     }

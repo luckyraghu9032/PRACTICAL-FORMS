@@ -300,11 +300,10 @@ app.post('/api/login', async (req, res) => {
         // Continue even if email fails - OTP is returned in response as fallback
     }
 
-    // Always return OTP in response as backup (show on screen if email doesn't arrive)
+    // Do not return the OTP in the response for security reasons!
     res.status(200).json({
         success: true,
-        message: 'OTP generated. Check your email or use the code below.',
-        otp: otp  // Returned as fallback in case email delivery fails
+        message: 'OTP has been securely sent to your email.'
     });
 });
 
