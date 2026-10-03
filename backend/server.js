@@ -25,7 +25,7 @@ app.use(express.json()); // Parse JSON request bodies
 
 // Health Check Route
 app.get('/', (req, res) => {
-    res.status(200).send('Sundip Forms API is running securely!');
+    res.status(200).send('Sandip Forms API is running securely!');
 });
 
 // Database Initialization
