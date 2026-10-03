@@ -378,9 +378,9 @@ app.post('/api/verify-otp', async (req, res) => {
 app.post('/api/forgot-password', async (req, res) => {
     const { email } = req.body;
     const allowedEmails = [
-        "rahulpatil@sandipuniversity.edu.in",
-        "anirudh.kolpyakwar@sandipuniversity.edu.in",
-        "raghurag172@gmail.com"
+        "sanjeevanilshukla@gmail.com",
+        "anirudha.kolpyakwar@gmail.com",
+        "saeebhadane9@gmail.com"
     ];
 
     if (!allowedEmails.includes(email)) {
@@ -388,10 +388,16 @@ app.post('/api/forgot-password', async (req, res) => {
     }
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    otpStore[email] = otp;
-    setTimeout(() => { delete otpStore[email]; }, 5 * 60 * 1000);
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
     try {
+        await ensureOtpTable();
+        await pool.query(
+            `INSERT INTO otp_store (email, otp, expires_at)
+             VALUES ($1, $2, $3)
+             ON CONFLICT (email) DO UPDATE SET otp = $2, expires_at = $3`,
+            [email, otp, expiresAt]
+        );
         await sendLoginOtp(email, otp, 'Password Reset');
         res.status(200).json({ success: true, message: 'Password reset OTP has been sent to your email.' });
     } catch (error) {
@@ -404,17 +410,34 @@ app.post('/api/forgot-password', async (req, res) => {
 app.post('/api/reset-password', async (req, res) => {
     const { email, otp, newPassword } = req.body;
 
-    if (otpStore[email] && otpStore[email] === otp) {
-        try {
-            await pool.query('UPDATE auth_settings SET shared_password = $1 WHERE id = 1', [newPassword]);
-            delete otpStore[email];
-            res.status(200).json({ success: true, message: 'Password has been successfully changed for all users!' });
-        } catch (err) {
-            console.error('Error updating password:', err);
-            res.status(500).json({ success: false, message: 'Database Error' });
+    try {
+        await ensureOtpTable();
+        const result = await pool.query(
+            `SELECT otp, expires_at FROM otp_store WHERE email = $1`, [email]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(401).json({ success: false, message: 'Invalid or expired OTP.' });
         }
-    } else {
-        res.status(401).json({ success: false, message: 'Invalid or expired OTP.' });
+
+        const { otp: storedOtp, expires_at } = result.rows[0];
+
+        if (new Date() > new Date(expires_at)) {
+            await pool.query('DELETE FROM otp_store WHERE email = $1', [email]);
+            return res.status(401).json({ success: false, message: 'OTP has expired. Please request a new one.' });
+        }
+
+        if (storedOtp !== String(otp).trim()) {
+            return res.status(401).json({ success: false, message: 'Invalid OTP.' });
+        }
+
+        await pool.query('UPDATE auth_settings SET shared_password = $1 WHERE id = 1', [newPassword]);
+        await pool.query('DELETE FROM otp_store WHERE email = $1', [email]);
+        res.status(200).json({ success: true, message: 'Password has been successfully changed for all users!' });
+
+    } catch (err) {
+        console.error('Error resetting password:', err);
+        res.status(500).json({ success: false, message: 'Database Error' });
     }
 });
 
