@@ -287,7 +287,7 @@ app.post('/api/login', async (req, res) => {
     const allowedEmails = [
         "sanjeevanilshukla@gmail.com",
         "anirudha.kolpyakwar@gmail.com",
-        "saee.bhadanne9@gmail.com",
+        "saee.bhadane9@gmail.com",
     ];
 
     if (!allowedEmails.includes(email)) {
