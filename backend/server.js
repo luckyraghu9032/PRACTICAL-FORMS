@@ -1,8 +1,11 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 const { sendLoginOtp } = require('./utils/email');
 const pool = require('./db'); // Load PostgreSQL connection
+
+const JWT_SECRET = process.env.JWT_SECRET || 'sandip-forms-secret-2026';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -277,13 +280,13 @@ async function ensureOtpTable() {
     otpTableReady = true;
 }
 
-// Login Route
+
+// Login Route — Step 1: validate credentials, generate OTP, return temp JWT
 app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
 
     console.log(`\nLogin attempt for email: ${email}`);
 
-    // List of allowed emails
     const allowedEmails = [
         "sanjeevanilshukla@gmail.com",
         "anirudha.kolpyakwar@gmail.com",
@@ -294,10 +297,10 @@ app.post('/api/login', async (req, res) => {
         return res.status(401).json({ success: false, message: 'Unauthorized email address.' });
     }
 
+    // Validate password
     try {
         const authRes = await pool.query('SELECT shared_password FROM auth_settings WHERE id = 1');
         const sharedPassword = authRes.rows.length > 0 ? authRes.rows[0].shared_password : 'sandip123';
-
         if (password !== sharedPassword) {
             return res.status(401).json({ success: false, message: 'Incorrect password.' });
         }
@@ -306,13 +309,12 @@ app.post('/api/login', async (req, res) => {
         return res.status(500).json({ success: false, message: 'Database Error while fetching password.' });
     }
 
-    // Generate a random 6-digit OTP
+    // Generate 6-digit OTP and save to DB
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
     try {
         await ensureOtpTable();
-        // Upsert OTP into database
         await pool.query(
             `INSERT INTO otp_store (email, otp, expires_at)
              VALUES ($1, $2, $3)
@@ -324,29 +326,49 @@ app.post('/api/login', async (req, res) => {
         return res.status(500).json({ success: false, message: 'Database Error while saving OTP.' });
     }
 
-    // Trigger the email sending logic
+    // Send OTP email
     try {
         await sendLoginOtp(email, otp, 'User');
     } catch (error) {
         console.error('Error sending OTP email:', error);
     }
 
-    // Do not return the OTP in the response for security reasons!
+    // Issue short-lived TEMP JWT (proves login attempt is in progress, 10 min)
+    const tempToken = jwt.sign(
+        { email, purpose: 'otp-verification' },
+        JWT_SECRET,
+        { expiresIn: '10m' }
+    );
+
     res.status(200).json({
         success: true,
-        message: 'OTP has been securely sent to your email.'
+        message: 'OTP has been securely sent to your email.',
+        tempToken
     });
 });
 
-// Verify OTP Route
+// Verify OTP Route — Step 2: validate temp JWT + OTP, issue final auth JWT
 app.post('/api/verify-otp', async (req, res) => {
-    const { email, otp } = req.body;
+    const { tempToken, otp } = req.body;
+
+    // Verify temporary JWT
+    let decoded;
+    try {
+        decoded = jwt.verify(tempToken, JWT_SECRET);
+    } catch (err) {
+        return res.status(401).json({ success: false, message: 'Session expired. Please login again.' });
+    }
+
+    if (decoded.purpose !== 'otp-verification') {
+        return res.status(401).json({ success: false, message: 'Invalid session token.' });
+    }
+
+    const email = decoded.email;
 
     try {
         await ensureOtpTable();
         const result = await pool.query(
-            `SELECT otp, expires_at FROM otp_store WHERE email = $1`,
-            [email]
+            `SELECT otp, expires_at FROM otp_store WHERE email = $1`, [email]
         );
 
         if (result.rows.length === 0) {
@@ -357,22 +379,36 @@ app.post('/api/verify-otp', async (req, res) => {
 
         if (new Date() > new Date(expires_at)) {
             await pool.query('DELETE FROM otp_store WHERE email = $1', [email]);
-            return res.status(401).json({ success: false, message: 'OTP has expired. Please request a new one.' });
+            return res.status(401).json({ success: false, message: 'OTP expired. Please request a new one.' });
         }
 
         if (storedOtp !== String(otp).trim()) {
             return res.status(401).json({ success: false, message: 'Invalid OTP. Please check your email.' });
         }
 
-        // OTP matched — delete it so it can't be reused
+        // OTP matched — delete it (single use)
         await pool.query('DELETE FROM otp_store WHERE email = $1', [email]);
-        res.status(200).json({ success: true, message: 'OTP verified successfully.' });
+
+        // Issue final authentication JWT (valid 8 hours)
+        const authToken = jwt.sign(
+            { email, role: 'admin' },
+            JWT_SECRET,
+            { expiresIn: '8h' }
+        );
+
+        res.status(200).json({
+            success: true,
+            message: 'Login successful.',
+            authToken
+        });
 
     } catch (err) {
         console.error('Error verifying OTP:', err);
         res.status(500).json({ success: false, message: 'Database Error during OTP verification.' });
     }
 });
+
+
 
 // Forgot Password Route (Send OTP)
 app.post('/api/forgot-password', async (req, res) => {

@@ -381,7 +381,7 @@
         const forgotForm = document.getElementById('forgot-form');
         const resetForm = document.getElementById('reset-form');
         let currentEmail = '';
-        let forgotEmail = '';
+        let currentTempToken = ''; // stores temp JWT between login and OTP steps
 
         function resetToLogin() {
             otpForm.classList.add('hidden');
@@ -417,6 +417,7 @@
                     
                     if(data.success) {
                         currentEmail = email;
+                        currentTempToken = data.tempToken; // Store temp JWT
                         loginForm.classList.add('hidden');
                         otpForm.classList.remove('hidden');
                     } else {
@@ -447,12 +448,14 @@
                     const response = await fetch('https://practical-forms.vercel.app/api/verify-otp', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email: currentEmail, otp })
+                        body: JSON.stringify({ tempToken: currentTempToken, otp })
                     });
                     const data = await response.json();
                     
                     if(data.success) {
-                        // OTP verified, redirect to dashboard
+                        // Store final auth token and redirect
+                        sessionStorage.setItem('authToken', data.authToken);
+                        sessionStorage.setItem('userEmail', currentEmail);
                         window.location.href = 'dashboard.html';
                     } else {
                         alert('Verification failed: ' + data.message);
