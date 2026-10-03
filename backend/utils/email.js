@@ -1,23 +1,18 @@
 require('dotenv').config();
 
-// Debug: confirm env vars are loaded
-console.log('  ðŸ“¬ Email config check:');
-console.log('     NODE_ENV       :', process.env.NODE_ENV || 'development');
-console.log('     RESEND_API_KEY :', process.env.RESEND_API_KEY ? `âœ… SET` : 'âŒ NOT SET');
-console.log('     GMAIL_USER     :', process.env.GMAIL_USER || 'âŒ NOT SET');
-console.log('     GMAIL_APP_PASS :', process.env.GMAIL_APP_PASS ? `âœ… SET (${process.env.GMAIL_APP_PASS.length} chars)` : 'âŒ NOT SET');
-
 /**
- * Send a 6-digit login OTP to the student's email.
+ * Send a 6-digit login OTP to the given email address.
  *
  * Strategy:
- *  - Production (Vercel): uses Resend HTTPS API (SMTP is blocked on Vercel)
- *  - Local development: uses Gmail SMTP via Nodemailer (free, any recipient)
+ *  1. Resend API  — used when RESEND_API_KEY is set (production/Vercel)
+ *  2. Gmail SMTP  — fallback when GMAIL_USER + GMAIL_APP_PASS are set (local dev)
+ *  3. Console log — last resort if no credentials are configured
  *
- * Falls back to console-only logging if no credentials are configured.
+ * The whitelist below ensures the helper never sends to unexpected addresses.
  */
 async function sendLoginOtp(toEmail, otp, name) {
-  // Whitelist to restrict OTP emails
+
+  // ── Whitelist ─────────────────────────────────────────────────────────────
   const allowedEmails = [
     'sanjeevanilshukla@gmail.com',
     'anirudha.kolpyakwar@gmail.com',
@@ -25,18 +20,19 @@ async function sendLoginOtp(toEmail, otp, name) {
   ];
 
   if (!allowedEmails.includes(toEmail)) {
-    console.log(`  🚫 LOGIN OTP BLOCKED: ${toEmail} is not in the allowed emails list.\n`);
+    console.log(`  🚫 OTP BLOCKED: ${toEmail} is not in the allowed list.\n`);
     return;
   }
 
-  // Always print OTP to console as backup
-  console.log('\n' + 'â•'.repeat(55));
-  console.log('  ðŸ“§  LOGIN OTP');
+  // ── Console log (always printed as server-side backup) ────────────────────
+  console.log('\n' + '═'.repeat(55));
+  console.log('  📧  LOGIN OTP');
   console.log('  Recipient : ' + toEmail);
   console.log('  OTP Code  : ' + otp);
   console.log('  Expires   : 10 minutes');
-  console.log('â•'.repeat(55) + '\n');
+  console.log('═'.repeat(55) + '\n');
 
+  // ── Email HTML body ───────────────────────────────────────────────────────
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto; background: #f8fafc; padding: 2rem; border-radius: 12px;">
       <div style="background: #1e293b; padding: 1.5rem; border-radius: 8px 8px 0 0; text-align: center;">
@@ -44,9 +40,9 @@ async function sendLoginOtp(toEmail, otp, name) {
         <p style="color: #94a3b8; margin: 4px 0 0; font-size: 0.8rem;">Login Verification</p>
       </div>
       <div style="background: #ffffff; padding: 2rem; border-radius: 0 0 8px 8px; border: 1px solid #e2e8f0; border-top: none;">
-        <p style="color: #334155;">Hello <strong>${name || 'Student'}</strong>,</p>
+        <p style="color: #334155;">Hello <strong>${name || 'User'}</strong>,</p>
         <p style="color: #475569; line-height: 1.6;">
-          A login attempt was made to your FAS Student account.
+          A login attempt was made to your FAS account.
           Use the code below to complete your sign-in:
         </p>
         <div style="text-align: center; margin: 2rem 0;">
@@ -55,21 +51,18 @@ async function sendLoginOtp(toEmail, otp, name) {
           </div>
         </div>
         <p style="color: #64748b; font-size: 0.85rem; text-align: center;">
-          â° This code expires in <strong>10 minutes</strong>.
+          ⏰ This code expires in <strong>10 minutes</strong>.
         </p>
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 1.5rem 0;">
         <p style="color: #94a3b8; font-size: 0.8rem; text-align: center;">
-          If you did not attempt to log in, please contact your administrator immediately.
+          Do not share this code with anyone. If you did not attempt to log in, contact your administrator immediately.
         </p>
       </div>
     </div>
   `;
 
-  // ==========================================
-  // Production Email sending via Resend API (Vercel)
-  // ==========================================
+  // ── 1. Resend (production — tried first) ──────────────────────────────────
   const resendApiKey = process.env.RESEND_API_KEY;
-  let resendSuccess = false;
   if (resendApiKey) {
     try {
       const { Resend } = require('resend');
@@ -78,33 +71,26 @@ async function sendLoginOtp(toEmail, otp, name) {
       const { data, error } = await resend.emails.send({
         from: 'Sandip University FAS <onboarding@resend.dev>',
         to: toEmail,
-        subject: 'Your Login Verification Code - Sandip University FAS',
+        subject: 'Your Login Verification Code – Sandip University FAS',
         html,
       });
 
       if (error) {
-        // Log full error so we can debug which email fails
-        console.error('  Resend API failed for', toEmail, ':', JSON.stringify(error), '\n');
+        console.error('  ❌ Resend failed for', toEmail, ':', JSON.stringify(error));
+        console.log('  → Falling back to Gmail SMTP...\n');
       } else {
-        console.log('  Login OTP sent via Resend to ' + toEmail + ' (ID: ' + data.id + ')\n');
-        resendSuccess = true;
+        console.log(`  ✅ OTP sent via Resend to ${toEmail} (ID: ${data.id})\n`);
+        return; // Success — stop here
       }
     } catch (err) {
-      console.error('  Resend send exception:', err.message, '\n');
+      console.error('  ❌ Resend exception:', err.message);
+      console.log('  → Falling back to Gmail SMTP...\n');
     }
   }
 
-  // Always also try Gmail SMTP as fallback (especially for non-verified Resend recipients)
-  if (!resendSuccess) {
-    console.log('  Resend did not succeed for', toEmail, '— trying Gmail SMTP fallback...\n');
-  }
-  // â”€â”€ Email sending via Gmail SMTP (Nodemailer) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── 2. Gmail SMTP via Nodemailer (fallback) ───────────────────────────────
   const gmailUser = process.env.GMAIL_USER;
   const gmailPass = process.env.GMAIL_APP_PASS;
-
-  // Inline diagnostics (visible in Vercel request logs)
-  console.log('  [EMAIL DIAG] GMAIL_USER     :', gmailUser || 'âŒ NOT SET');
-  console.log('  [EMAIL DIAG] GMAIL_APP_PASS :', gmailPass ? `âœ… SET (${gmailPass.length} chars, first: "${gmailPass[0]}", last: "${gmailPass[gmailPass.length-1]}")` : 'âŒ NOT SET');
 
   if (gmailUser && gmailPass && gmailPass !== 'your_gmail_app_password') {
     try {
@@ -117,20 +103,19 @@ async function sendLoginOtp(toEmail, otp, name) {
       const info = await transporter.sendMail({
         from: `"Sandip University FAS" <${gmailUser}>`,
         to: toEmail,
-        subject: 'Your Login Verification Code - Sandip University FAS',
+        subject: 'Your Login Verification Code – Sandip University FAS',
         html,
       });
 
-      console.log(`  âœ… Login OTP sent via Gmail to ${toEmail} (ID: ${info.messageId})\n`);
+      console.log(`  ✅ OTP sent via Gmail SMTP to ${toEmail} (ID: ${info.messageId})\n`);
+      return;
     } catch (err) {
-      console.error('  âŒ Gmail send failed:', err.message, '\n');
+      console.error('  ❌ Gmail SMTP failed:', err.message, '\n');
     }
-    return;
   }
 
-  // â”€â”€ No credentials configured â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  console.log('  âš ï¸  DEV MODE: No email credentials set. OTP is in the console above.\n');
+  // ── 3. No credentials — OTP is already logged to console above ───────────
+  console.log('  ⚠️  No email credentials configured. OTP is shown in the server console above.\n');
 }
 
 module.exports = { sendLoginOtp };
-
