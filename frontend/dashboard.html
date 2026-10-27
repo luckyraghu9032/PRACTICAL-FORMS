@@ -1146,9 +1146,55 @@
                         let val = cName;
                         if (yr) val += (val ? " - " : "") + "Yr " + yr;
                         if (semSelect.value) val += (val ? " - " : "") + "Sem " + semSelect.value;
+                        const startYr = document.getElementById('assign-start-year') ? document.getElementById('assign-start-year').value : '';
+                        const regYr = document.getElementById('assign-regulation') ? document.getElementById('assign-regulation').value : '';
+                        const customReg = document.getElementById('assign-regulation-custom') ? document.getElementById('assign-regulation-custom').value : '';
+                        const finalReg = regYr === 'custom' ? customReg : regYr;
+                        if (startYr) val += (val ? " | " : "") + "StartYr:" + startYr;
+                        if (finalReg) val += (val ? " | " : "") + "Reg:" + finalReg;
                         document.getElementById('assign-course').value = val;
                     }
                 </script>
+                <!-- Year (Starting Year) & Regulations -->
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;" id="assign-year-reg-row">
+                    <div class="fl-wrap">
+                        <select class="fl-input" id="assign-start-year" style="padding-top:12px;" onchange="updateCourse()">
+                            <option value="">Starting Year (Admission Year)...</option>
+                        </select>
+                        <label class="fl-label" style="top:4px;font-size:10px;color:var(--accent);">&#127891; Year (Starting Year)</label>
+                        <script>
+                            (function populateStartYears() {
+                                const sel = document.getElementById('assign-start-year');
+                                const currentYear = new Date().getFullYear();
+                                for (let y = 2016; y <= currentYear; y++) {
+                                    const opt = document.createElement('option');
+                                    opt.value = y;
+                                    opt.textContent = y;
+                                    sel.appendChild(opt);
+                                }
+                            })();
+                        </script>
+                    </div>
+                    <div class="fl-wrap" style="display:flex;flex-direction:column;gap:8px;">
+                        <select class="fl-input" id="assign-regulation" style="padding-top:12px;" onchange="handleRegulationChange(); updateCourse();">
+                            <option value="">Select Regulations...</option>
+                            <option value="2017">2017</option>
+                            <option value="2023">2023</option>
+                            <option value="custom">Other (Enter manually)</option>
+                        </select>
+                        <label class="fl-label" style="top:4px;font-size:10px;color:var(--accent);">&#128195; Regulations</label>
+                        <input class="fl-input" type="text" id="assign-regulation-custom" placeholder="Enter regulation year..." style="display:none;padding-top:8px;" oninput="updateCourse()">
+                        <script>
+                            function handleRegulationChange() {
+                                const val = document.getElementById('assign-regulation').value;
+                                const customInput = document.getElementById('assign-regulation-custom');
+                                customInput.style.display = (val === 'custom') ? '' : 'none';
+                                if (val !== 'custom') customInput.value = '';
+                            }
+                        </script>
+                    </div>
+                </div>
+
                 <!-- Subject type and candidate counts -->
 
                 <div style="display:grid;grid-template-columns:1fr 1fr 1fr 0.8fr;gap:20px;margin-bottom:24px;">
@@ -2609,6 +2655,10 @@
                 document.getElementById('assign-int').value = '';
                 document.getElementById('assign-lab').value = '';
                 document.getElementById('assign-course').value = '';
+                document.getElementById('assign-start-year').value = '';
+                document.getElementById('assign-regulation').value = '';
+                document.getElementById('assign-regulation-custom').value = '';
+                document.getElementById('assign-regulation-custom').style.display = 'none';
                 
                 // Clear editing flag
                 document.getElementById('assign-claim-no').dataset.editing = '';
@@ -3012,10 +3062,29 @@
             doc.text('Claim / Remuneration Form', pageW / 2, y, { align: 'center' }); y += 5;
             doc.text('PRACTICAL WISE STATEMENT - ' + monthText.toUpperCase() + ' ' + yearText, pageW / 2, y, { align: 'center' }); y += 5;
             doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(180, 0, 0);
-            doc.text('Course Name / Code : ' + (claim.course || info.courseName || '-') + ' / ' + (subject || '-'), 14, y);
+            // Extract StartYear and Regulation from course string for display
+            const _courseStrPdf = claim.course || '';
+            const _startYrPdf = (_courseStrPdf.match(/StartYr:(\d+)/) || [])[1] || '';
+            const _regPdf = (_courseStrPdf.match(/Reg:([\w\d]+)/) || [])[1] || '';
+            // Clean course string: remove encoded metadata tags AND the "- Yr XX - Sem XX" part
+            const _cleanCoursePdf = _courseStrPdf
+                .replace(/\s*\|\s*StartYr:\d+/g, '')
+                .replace(/\s*\|\s*Reg:[\w\d]+/g, '')
+                .replace(/\s*-\s*Yr\s*\w+(\s*-\s*Sem\s*\w+)?/gi, '')
+                .trim();
+            doc.text('Course Name / Code : ' + (_cleanCoursePdf || info.courseName || '-') + ' / ' + (subject || '-'), 14, y);
             doc.text('Year / Semester : ' + (info.year || '-') + ' / ' + (info.semester || '-'), pageW - 14, y, { align: 'right' });
             y += 4;
             doc.text('Division: ' + (division || '-') + '    Batch: ' + (batch || '-'), pageW - 14, y, { align: 'right' });
+            if (_startYrPdf || _regPdf) {
+                y += 4;
+                doc.setTextColor(180, 0, 0);
+                const startYrLabel = _startYrPdf ? 'Starting Year: ' + _startYrPdf : '';
+                const regLabel = _regPdf ? 'Regulations: ' + _regPdf : '';
+                const yearRegLine = [startYrLabel, regLabel].filter(Boolean).join('     ');
+                doc.text(yearRegLine, 14, y);
+                doc.setTextColor(0, 0, 0);
+            }
             doc.setTextColor(0, 0, 0); y += 3;
 
             const tableHead = [[
@@ -3024,9 +3093,9 @@
                 'Lab Assistant\nRs. ' + masterRates.lab + ' / Practical', 'TA\nRs. ' + masterRates.ta + ' /\nkm', 'DA\nRs.' + masterRates.da + '\n/day', 'Total\nAmount', 'Signature'
             ]];
             const body = [
-                [{ content: info.date, rowSpan: 3 }, (claim.ext_name || '') + '\n(External)', info.external.college || '', { content: claim.registered || '', rowSpan: 3 }, { content: claim.present || '', rowSpan: 3 }, claim.ext_name ? (info.distance > 0 ? info.distance + 'x2' : '**') : '', claim.ext_name ? info.rem : '', '', claim.ext_name ? (info.ta > 0 ? info.ta : '**') : '', claim.ext_name ? (info.da > 0 ? info.da : '**') : '', claim.ext_name ? info.externalTotal : '', ''],
-                [(claim.int_name || '') + '\n(Internal)', info.internal.college || '', claim.int_name ? '**' : '', claim.int_name ? info.rem : '', '', claim.int_name ? 0 : '', claim.int_name ? 0 : '', claim.int_name ? info.internalTotal : '', ''],
-                [(claim.lab_name || '') + '\n(Lab Assistant)', info.lab.college || '', claim.lab_name ? '**' : '', '', claim.lab_name ? info.labTotal : '', claim.lab_name ? 0 : '', claim.lab_name ? 0 : '', claim.lab_name ? info.labTotal : '', '']
+                [{ content: info.date, rowSpan: 3 }, (claim.ext_name || '') + '\n(External)', info.external.college || '', { content: claim.registered || '', rowSpan: 3 }, { content: claim.present || '', rowSpan: 3 }, claim.ext_name ? (info.distance > 0 ? info.distance + 'x2' : 0) : '', claim.ext_name ? info.rem : '', '', claim.ext_name ? (info.ta > 0 ? info.ta : 0) : '', claim.ext_name ? (info.da > 0 ? info.da : 0) : '', claim.ext_name ? info.externalTotal : '', ''],
+                [(claim.int_name || '') + '\n(Internal)', info.internal.college || '', claim.int_name ? 0 : '', claim.int_name ? info.rem : '', '', claim.int_name ? 0 : '', claim.int_name ? 0 : '', claim.int_name ? info.internalTotal : '', ''],
+                [(claim.lab_name || '') + '\n(Lab Assistant)', info.lab.college || '', claim.lab_name ? 0 : '', '', claim.lab_name ? info.labTotal : '', claim.lab_name ? 0 : '', claim.lab_name ? 0 : '', claim.lab_name ? info.labTotal : '', '']
             ];
             for (let blank = 0; blank < 1; blank++) {
                 body.push([{ content: '', rowSpan: 3, minCellHeight: 10 }, '(External)', '', { content: '', rowSpan: 3 }, { content: '', rowSpan: 3 }, '', '', '', '', '', '', '']);
@@ -3073,7 +3142,7 @@
                     ['School of ' + (claim.school || '___________') + ' / Programme with Specialization'],
                     ['Claim / Remuneration Form'],
                     ['PRACTICAL WISE STATEMENT - ' + monthText.toUpperCase() + ' ' + yearText],
-                    ['Course Name / Code : ' + (claim.course || info.courseName || '-') + ' / ' + (claim.subject || '-'), '', '', '', '', '', '', '', 'Year / Semester : ' + (info.year || '-') + ' / ' + (info.semester || '-'), '', 'Division: ' + (division || '-') + '    Batch: ' + (batch || '-')],
+                    ['Course Name / Code : ' + ((claim.course || info.courseName || '-').replace(/\s*\|\s*StartYr:\d+/g,'').replace(/\s*\|\s*Reg:[\w\d]+/g,'').replace(/\s*-\s*Yr\s*\w+(\s*-\s*Sem\s*\w+)?/gi,'').trim()) + ' / ' + (claim.subject || '-'), '', '', '', '', '', '', '', 'Year / Semester : ' + (info.year || '-') + ' / ' + (info.semester || '-'), '', 'Division: ' + (division || '-') + '    Batch: ' + (batch || '-')],
                     ['Date', 'Name & Designation', 'College & Name\n(Abbreviated)', 'No. of Cands\nRegistered', 'No. of Cands\nExamined', 'Distance in\nkm (to & From)', 'Remuneration for Examined candidates only\nIf below Rs.100, use Rs.100', 'Lab Assistant\nRs.' + masterRates.lab + '/Practical', 'TA\nRs.' + masterRates.ta + '/km', 'DA\nRs.' + masterRates.da + '/day', 'Total Amount', 'Signature'],
                     [info.date, (claim.ext_name || '') + ' (External)', info.external.college || '', claim.registered || '', claim.present || '', claim.ext_name ? (info.distance > 0 ? info.distance + 'x2' : '**') : '', claim.ext_name ? info.rem : '', '', claim.ext_name ? info.ta : '', claim.ext_name ? info.da : '', claim.ext_name ? info.externalTotal : '', ''],
                     ['', (claim.int_name || '') + ' (Internal)', info.internal.college || '', '', '', claim.int_name ? '**' : '', claim.int_name ? info.rem : '', '', claim.int_name ? 0 : '', claim.int_name ? 0 : '', claim.int_name ? info.internalTotal : '', ''],
@@ -3211,7 +3280,7 @@
                                 <td>${claim.claim_no || '-'}</td>
                                 <td>${claim.int_name || '-'}</td>
                                 <td>${intStaff.college || '-'}</td>
-                                <td>${claim.school || '-'} - ${claim.course || '-'}</td>
+                                <td>${claim.school || '-'} - ${(claim.course || '-').replace(/\s*\|\s*StartYr:\d+/g,'').replace(/\s*\|\s*Reg:[\w\d]+/g,'').trim()}</td>
                                 <td>${(claim.course || '').split(' - ')[0]} - ${claim.subject || '-'}</td>
                                 <td>${claim.sub_type || '-'}</td>
                                 <td>${claim.exam_date ? claim.exam_date.split('T')[0] : '-'}</td>
@@ -3448,6 +3517,25 @@
         document.getElementById('assign-course-name').value = parsedCourseName;
         document.getElementById('assign-subject-code').value = assign.subject || '';
         document.getElementById('assign-subject').value = assign.subject || '';
+
+        // ── Starting Year & Regulations ──
+        const startYrMatch = courseStr.match(/StartYr:(\d+)/);
+        const regMatch = courseStr.match(/Reg:(\d+|[\w\d]+)/);
+        if (startYrMatch) document.getElementById('assign-start-year').value = startYrMatch[1];
+        if (regMatch) {
+            const regVal = regMatch[1];
+            const regSel = document.getElementById('assign-regulation');
+            const customInput = document.getElementById('assign-regulation-custom');
+            if (regVal === '2017' || regVal === '2023') {
+                regSel.value = regVal;
+                customInput.style.display = 'none';
+            } else {
+                regSel.value = 'custom';
+                customInput.value = regVal;
+                customInput.style.display = '';
+            }
+        }
+
         updateCourse(); // update hidden assign-course field
 
         // ── Division / Batch ──
